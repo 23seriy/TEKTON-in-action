@@ -33,7 +33,7 @@ spec:
           - name: git-revision
             value: "$(tt.params.git-revision)"
           - name: image
-            value: "localhost:5000/scores-api:$(tt.params.git-revision)"
+            value: "scores-api:$(tt.params.git-revision)"
           - name: app-version
             value: "v2"
         workspaces:

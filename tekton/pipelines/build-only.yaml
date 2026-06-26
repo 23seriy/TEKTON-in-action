@@ -20,7 +20,7 @@ spec:
       default: "main"
     - name: image
       type: string
-      default: "localhost:5000/scores-api:latest"
+      default: "scores-api:latest"
     - name: app-version
       type: string
       default: "v1"

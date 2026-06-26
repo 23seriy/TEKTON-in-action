@@ -22,7 +22,7 @@ spec:
     - name: image
       type: string
       description: Target image reference
-      default: "localhost:5000/scores-api:latest"
+      default: "scores-api:latest"
     - name: app-version
       type: string
       description: Application version (v1 or v2)
