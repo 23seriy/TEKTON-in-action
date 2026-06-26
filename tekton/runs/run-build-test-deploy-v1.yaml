@@ -16,7 +16,7 @@ spec:
     - name: git-revision
       value: "main"
     - name: image
-      value: "localhost:5000/scores-api:v1"
+      value: "scores-api:v1"
     - name: app-version
       value: "v1"
   workspaces:

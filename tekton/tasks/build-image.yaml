@@ -11,7 +11,7 @@ spec:
   params:
     - name: IMAGE
       type: string
-      description: Full image reference (e.g., localhost:5000/scores-api:v1)
+      description: Full image reference (e.g., scores-api:v1)
     - name: CONTEXT
       type: string
       description: Build context directory inside the workspace
@@ -30,11 +30,11 @@ spec:
   steps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:latest
+      command:
+        - /kaniko/executor
       args:
-        - "--dockerfile=$(params.CONTEXT)/$(params.DOCKERFILE)"
-        - "--context=$(workspaces.source.path)/$(params.CONTEXT)"
+        - "--dockerfile=$(params.DOCKERFILE)"
+        - "--context=dir://$(workspaces.source.path)/$(params.CONTEXT)"
         - "--destination=$(params.IMAGE)"
-        - "--insecure"
-        - "--skip-tls-verify"
         - "--no-push"
         - "--build-arg=APP_VERSION=$(params.APP_VERSION)"
