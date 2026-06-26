@@ -115,7 +115,7 @@ Builds v1 and v2 container images inside Minikube, deploys the Scores API (v1), 
 
 ### Step 4: Access the Application
 
-In **separate terminals**, start:
+The Scores API and Tekton Dashboard run inside the Minikube cluster. To access them from your browser, start port-forwards in **separate terminals**:
 
 ```bash
 # Terminal 1: Scores API
@@ -125,9 +125,17 @@ kubectl port-forward svc/scores-api 9080:8080 -n tekton-demo
 kubectl port-forward svc/tekton-dashboard 9097:9097 -n tekton-pipelines
 ```
 
-Open:
-- **http://localhost:9080** — NBA Scores API
-- **http://localhost:9097** — Tekton Dashboard
+Then open:
+- **http://localhost:9080** — NBA Scores API (v1: basic scores, v2: with play-by-play)
+- **http://localhost:9097** — Tekton Dashboard (pipeline runs, task logs, triggers)
+
+Alternatively, use Minikube's built-in service tunnel:
+
+```bash
+minikube service scores-api -n tekton-demo -p tekton-demo
+```
+
+> **Note:** Keep the port-forward terminals running throughout the demo. The demo script references `http://localhost:9080` — it won't be reachable without the port-forward.
 
 ### Step 5: Run the Demo Scenarios
 
@@ -174,7 +182,7 @@ kubectl create -f tekton/runs/run-build-test-deploy-v2.yaml
 tkn pipelinerun logs -f -n tekton-demo
 ```
 
-Same pipeline, different parameters. Builds v2 with `APP_VERSION=v2` and deploys it. Visit the app to see play-by-play data.
+Same pipeline, different parameters. Builds v2 with `APP_VERSION=v2` and deploys it. Visit **http://localhost:9080** to see play-by-play data under each game card (requires port-forward — see [Step 4](#step-4-access-the-application)).
 
 ### 5. Manual Deploy — Quick Switch
 
@@ -188,7 +196,7 @@ kubectl set image deployment/scores-api scores-api=scores-api:v2 -n tekton-demo
 kubectl set env deployment/scores-api APP_VERSION=v2 -n tekton-demo
 ```
 
-Sometimes you just want to deploy without a full pipeline run.
+Sometimes you just want to deploy without a full pipeline run. Verify each switch at **http://localhost:9080** (requires port-forward — see [Step 4](#step-4-access-the-application)).
 
 ### 6. Build-Only Pipeline — PR Validation
 
