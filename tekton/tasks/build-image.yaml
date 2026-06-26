@@ -20,10 +20,10 @@ spec:
       type: string
       description: Path to the Dockerfile relative to the context
       default: "Dockerfile"
-    - name: BUILD_ARGS
+    - name: APP_VERSION
       type: string
-      description: Extra build arguments (e.g., --build-arg APP_VERSION=v2)
-      default: ""
+      description: Application version to pass as build argument
+      default: "v1"
   workspaces:
     - name: source
       description: Workspace containing the source code
@@ -36,4 +36,5 @@ spec:
         - "--destination=$(params.IMAGE)"
         - "--insecure"
         - "--skip-tls-verify"
-        - "$(params.BUILD_ARGS)"
+        - "--no-push"
+        - "--build-arg=APP_VERSION=$(params.APP_VERSION)"
