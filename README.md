@@ -318,4 +318,3 @@ Deletes all demo resources, uninstalls Tekton Pipelines, Triggers, and Dashboard
 ## 📝 License
 
 MIT — Use freely for learning, demos, and presentations.
-# TEKTON-in-action
