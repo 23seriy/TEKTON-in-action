@@ -1,0 +1,68 @@
+# Pipeline: Build-only — lint + build without deploying
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-only
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: |
+    Build-only pipeline for the NBA Scores API.
+    Clones the source, lints the code, and builds the container image.
+    Does NOT deploy — useful for PR validation.
+  params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+    - name: git-revision
+      type: string
+      default: "main"
+    - name: image
+      type: string
+      default: "localhost:5000/scores-api:latest"
+    - name: app-version
+      type: string
+      default: "v1"
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: clone
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: URL
+          value: "$(params.git-url)"
+        - name: REVISION
+          value: "$(params.git-revision)"
+
+    - name: lint
+      taskRef:
+        name: lint-code
+      runAfter:
+        - clone
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: SOURCE_DIR
+          value: "source/apps/scores-api"
+
+    - name: build
+      taskRef:
+        name: build-image
+      runAfter:
+        - lint
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: IMAGE
+          value: "$(params.image)"
+        - name: CONTEXT
+          value: "source/apps/scores-api"
+        - name: BUILD_ARGS
+          value: "--build-arg=APP_VERSION=$(params.app-version)"

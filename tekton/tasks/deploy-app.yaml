@@ -1,0 +1,58 @@
+# Task: Deploy (or update) the Scores API Deployment
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-app
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: Update the Scores API deployment image and build metadata.
+  params:
+    - name: IMAGE
+      type: string
+      description: Full image reference to deploy
+    - name: APP_VERSION
+      type: string
+      description: Application version (v1 or v2)
+      default: "v1"
+    - name: BUILD_ID
+      type: string
+      description: Build identifier from the pipeline run
+      default: "tekton"
+    - name: NAMESPACE
+      type: string
+      description: Target namespace
+      default: "tekton-demo"
+  steps:
+    - name: deploy
+      image: bitnami/kubectl:1.32
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Deploying Scores API ==="
+        echo "  Image:   $(params.IMAGE)"
+        echo "  Version: $(params.APP_VERSION)"
+        echo "  Build:   $(params.BUILD_ID)"
+        echo ""
+
+        # Update the deployment image
+        kubectl set image deployment/scores-api \
+          scores-api="$(params.IMAGE)" \
+          -n "$(params.NAMESPACE)"
+
+        # Update environment variables
+        kubectl set env deployment/scores-api \
+          APP_VERSION="$(params.APP_VERSION)" \
+          BUILD_ID="$(params.BUILD_ID)" \
+          -n "$(params.NAMESPACE)"
+
+        # Wait for rollout
+        echo "Waiting for rollout..."
+        kubectl rollout status deployment/scores-api \
+          -n "$(params.NAMESPACE)" \
+          --timeout=120s
+
+        echo ""
+        echo "✅ Deployment complete"
+        kubectl get pods -n "$(params.NAMESPACE)" -l app=scores-api

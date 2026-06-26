@@ -1,0 +1,14 @@
+# TaskRun: Run tests directly against an already-deployed Scores API
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  generateName: run-tests-
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  taskRef:
+    name: run-tests
+  params:
+    - name: APP_URL
+      value: "http://scores-api.tekton-demo.svc.cluster.local:8080"

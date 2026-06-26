@@ -1,0 +1,30 @@
+# PipelineRun: Build-only (no deploy) — for PR validation
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-only-
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+    tekton.dev/pipeline: build-only
+spec:
+  pipelineRef:
+    name: build-only
+  params:
+    - name: git-url
+      value: "https://github.com/23seriy/tekton-in-action.git"
+    - name: git-revision
+      value: "main"
+    - name: image
+      value: "localhost:5000/scores-api:pr-check"
+    - name: app-version
+      value: "v1"
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi

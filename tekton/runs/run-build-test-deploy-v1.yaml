@@ -1,0 +1,32 @@
+# PipelineRun: Build, test, and deploy v1 of the Scores API
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-test-deploy-v1-
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+    tekton.dev/pipeline: build-test-deploy
+spec:
+  pipelineRef:
+    name: build-test-deploy
+  params:
+    - name: git-url
+      value: "https://github.com/23seriy/tekton-in-action.git"
+    - name: git-revision
+      value: "main"
+    - name: image
+      value: "localhost:5000/scores-api:v1"
+    - name: app-version
+      value: "v1"
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
+  taskRunTemplate:
+    serviceAccountName: tekton-deployer

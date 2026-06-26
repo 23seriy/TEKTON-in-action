@@ -1,0 +1,14 @@
+# TriggerBinding: Extracts fields from a GitHub webhook payload
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  params:
+    - name: git-revision
+      value: "$(body.head_commit.id)"
+    - name: git-url
+      value: "$(body.repository.clone_url)"

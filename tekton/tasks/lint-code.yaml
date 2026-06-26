@@ -1,0 +1,40 @@
+# Task: Lint Python source code
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: lint-code
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: Run basic Python linting on the application code.
+  params:
+    - name: SOURCE_DIR
+      type: string
+      description: Directory containing Python source files
+      default: "apps/scores-api"
+  workspaces:
+    - name: source
+      description: Workspace containing the source code
+  steps:
+    - name: lint
+      image: python:3.12-slim
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Linting Python code ==="
+        pip install -q pycodestyle 2>/dev/null
+        cd "$(workspaces.source.path)/$(params.SOURCE_DIR)"
+
+        echo "Checking syntax..."
+        python -m py_compile app.py
+        echo "✅ Syntax OK"
+
+        echo ""
+        echo "Running pycodestyle (PEP 8)..."
+        pycodestyle --max-line-length=200 --statistics app.py || {
+          echo "⚠️  Style warnings found (non-blocking)"
+        }
+
+        echo ""
+        echo "✅ Lint complete"

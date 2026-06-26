@@ -1,0 +1,49 @@
+# TriggerTemplate: Creates a PipelineRun when a webhook fires
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: scores-api-trigger-template
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  params:
+    - name: git-revision
+      description: The git revision (branch or SHA)
+      default: "main"
+    - name: git-url
+      description: The git repository URL
+      default: "https://github.com/23seriy/tekton-in-action.git"
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: triggered-build-
+        namespace: tekton-demo
+        labels:
+          app.kubernetes.io/part-of: tekton-demo
+          tekton.dev/pipeline: build-test-deploy
+          triggered-by: webhook
+      spec:
+        pipelineRef:
+          name: build-test-deploy
+        params:
+          - name: git-url
+            value: "$(tt.params.git-url)"
+          - name: git-revision
+            value: "$(tt.params.git-revision)"
+          - name: image
+            value: "localhost:5000/scores-api:$(tt.params.git-revision)"
+          - name: app-version
+            value: "v2"
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 500Mi
+        taskRunTemplate:
+          serviceAccountName: tekton-deployer

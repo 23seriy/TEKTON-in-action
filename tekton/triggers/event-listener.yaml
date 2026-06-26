@@ -1,0 +1,16 @@
+# EventListener: Receives GitHub webhook events and triggers pipelines
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-listener
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  serviceAccountName: tekton-deployer
+  triggers:
+    - name: github-push
+      bindings:
+        - ref: github-push-binding
+      template:
+        ref: scores-api-trigger-template

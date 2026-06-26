@@ -1,0 +1,39 @@
+# Task: Build a container image using Kaniko (no Docker daemon needed)
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-image
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: Build a container image using Kaniko and push to a local registry.
+  params:
+    - name: IMAGE
+      type: string
+      description: Full image reference (e.g., localhost:5000/scores-api:v1)
+    - name: CONTEXT
+      type: string
+      description: Build context directory inside the workspace
+      default: "."
+    - name: DOCKERFILE
+      type: string
+      description: Path to the Dockerfile relative to the context
+      default: "Dockerfile"
+    - name: BUILD_ARGS
+      type: string
+      description: Extra build arguments (e.g., --build-arg APP_VERSION=v2)
+      default: ""
+  workspaces:
+    - name: source
+      description: Workspace containing the source code
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        - "--dockerfile=$(params.CONTEXT)/$(params.DOCKERFILE)"
+        - "--context=$(workspaces.source.path)/$(params.CONTEXT)"
+        - "--destination=$(params.IMAGE)"
+        - "--insecure"
+        - "--skip-tls-verify"
+        - "$(params.BUILD_ARGS)"

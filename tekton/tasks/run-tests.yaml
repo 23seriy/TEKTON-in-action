@@ -1,0 +1,69 @@
+# Task: Run application tests against a deployed service
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: run-tests
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: Run smoke tests against the Scores API to verify the build.
+  params:
+    - name: APP_URL
+      type: string
+      description: URL of the deployed application to test
+      default: "http://scores-api.tekton-demo.svc.cluster.local:8080"
+  steps:
+    - name: test-health
+      image: curlimages/curl:8.10.1
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Testing /health ==="
+        HEALTH=$(curl -sf "$(params.APP_URL)/health")
+        echo "$HEALTH"
+        echo "$HEALTH" | grep -q '"status":"healthy"' || {
+          echo "❌ Health check FAILED"; exit 1;
+        }
+        echo "✅ Health check passed"
+
+    - name: test-scores
+      image: curlimages/curl:8.10.1
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Testing /scores ==="
+        SCORES=$(curl -sf "$(params.APP_URL)/scores")
+        echo "$SCORES"
+        echo "$SCORES" | grep -q '"game_count"' || {
+          echo "❌ Scores endpoint FAILED"; exit 1;
+        }
+        echo "✅ Scores endpoint passed"
+
+    - name: test-build-info
+      image: curlimages/curl:8.10.1
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Testing /build-info ==="
+        BUILD=$(curl -sf "$(params.APP_URL)/build-info")
+        echo "$BUILD"
+        echo "$BUILD" | grep -q '"builder"' || {
+          echo "❌ Build-info endpoint FAILED"; exit 1;
+        }
+        echo "✅ Build-info endpoint passed"
+
+    - name: test-app-tests
+      image: curlimages/curl:8.10.1
+      script: |
+        #!/bin/sh
+        set -e
+        echo "=== Testing /test ==="
+        RESULT=$(curl -sf "$(params.APP_URL)/test")
+        echo "$RESULT"
+        echo "$RESULT" | grep -q '"status":"PASS"' || {
+          echo "❌ App self-test FAILED"; exit 1;
+        }
+        echo "✅ App self-test passed"
+        echo ""
+        echo "🎉 All tests PASSED"

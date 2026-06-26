@@ -1,0 +1,99 @@
+# Pipeline: Build → Test → Deploy the NBA Scores API
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-test-deploy
+  namespace: tekton-demo
+  labels:
+    app.kubernetes.io/part-of: tekton-demo
+spec:
+  description: |
+    Full CI/CD pipeline for the NBA Scores API.
+    Clones the source, lints the code, builds a container image with Kaniko,
+    deploys it, and runs smoke tests.
+  params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+    - name: git-revision
+      type: string
+      description: Git revision (branch, tag, or SHA)
+      default: "main"
+    - name: image
+      type: string
+      description: Target image reference
+      default: "localhost:5000/scores-api:latest"
+    - name: app-version
+      type: string
+      description: Application version (v1 or v2)
+      default: "v1"
+  workspaces:
+    - name: shared-workspace
+      description: Workspace shared across tasks for source code and build artifacts
+  tasks:
+    # Step 1: Clone the source
+    - name: clone
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: URL
+          value: "$(params.git-url)"
+        - name: REVISION
+          value: "$(params.git-revision)"
+
+    # Step 2: Lint the code (runs after clone)
+    - name: lint
+      taskRef:
+        name: lint-code
+      runAfter:
+        - clone
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: SOURCE_DIR
+          value: "source/apps/scores-api"
+
+    # Step 3: Build container image (runs after lint)
+    - name: build
+      taskRef:
+        name: build-image
+      runAfter:
+        - lint
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: IMAGE
+          value: "$(params.image)"
+        - name: CONTEXT
+          value: "source/apps/scores-api"
+        - name: BUILD_ARGS
+          value: "--build-arg=APP_VERSION=$(params.app-version)"
+
+    # Step 4: Deploy to the cluster (runs after build)
+    - name: deploy
+      taskRef:
+        name: deploy-app
+      runAfter:
+        - build
+      params:
+        - name: IMAGE
+          value: "$(params.image)"
+        - name: APP_VERSION
+          value: "$(params.app-version)"
+        - name: BUILD_ID
+          value: "$(context.pipelineRun.name)"
+
+    # Step 5: Run smoke tests (runs after deploy)
+    - name: test
+      taskRef:
+        name: run-tests
+      runAfter:
+        - deploy
+      params:
+        - name: APP_URL
+          value: "http://scores-api.tekton-demo.svc.cluster.local:8080"
